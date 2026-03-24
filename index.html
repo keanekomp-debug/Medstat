@@ -2,49 +2,62 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ANVISA Market Intelligence</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;600&display=swap" rel="stylesheet">
+
+<title>Brazil Pharma Portfolio Intelligence</title>
 
 <style>
 
 body{
+font-family:Figtree;
+background:#f3f4f6;
+color:#111;
+padding:30px;
+transition:.3s;
+}
+
+.dark{
 background:#0f172a;
 color:white;
-font-family:Arial;
-padding:30px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:14px;
+box-shadow:0 6px 20px rgba(0,0,0,.08);
+margin-bottom:20px;
+}
+
+.dark .card{
+background:#111827;
 }
 
 textarea{
 width:100%;
-height:150px;
-background:black;
-color:#22c55e;
-padding:10px;
+height:140px;
+margin-top:10px;
 }
 
 button{
 background:#22c55e;
-padding:10px 20px;
 border:none;
-margin-top:10px;
+padding:10px 18px;
+border-radius:8px;
 cursor:pointer;
+margin-top:10px;
 }
 
-#status{
-margin-top:20px;
-background:#111827;
-padding:15px;
-border-radius:10px;
-font-size:13px;
-height:120px;
-overflow:auto;
+.badge{
+padding:4px 10px;
+border-radius:999px;
+font-size:12px;
 }
 
-.good{color:#4ade80}
-.bad{color:#f87171}
-.mid{color:#facc15}
+.good{background:#bbf7d0}
+.mid{background:#fde68a}
+.bad{background:#fecaca}
 
 </style>
 
@@ -52,192 +65,132 @@ overflow:auto;
 
 <body>
 
-<h2>🇧🇷 ANVISA Market Intelligence Engine</h2>
+<button onclick="toggle()">🌙 Toggle Mode</button>
 
-<textarea id="input">
+<div class="card">
+
+<h2>Paste Molecules</h2>
+
+<textarea id="inns">
 vonoprazana
 empagliflozina
 bilastina
 </textarea>
 
-<br>
+</div>
 
-<button onclick="run()">RUN SCAN</button>
+<div class="card">
 
-<br><br>
+<h2>Paste ANVISA Dataset</h2>
 
-Load CMED Price XLS:
-<input type="file" id="priceFile">
+<textarea id="dataset"></textarea>
 
-<br><br>
+<button onclick="run()">Analyse Portfolio</button>
 
-Load Procurement CSV:
-<input type="file" id="buyFile">
+</div>
 
-<div id="status"></div>
+<div class="card">
 
 <table id="out"></table>
 
+</div>
+
 <script>
 
-const BASE="https://consultas.anvisa.gov.br/api/consulta/medicamentos"
-
-let priceData=[]
-let buyData=[]
-
-function log(msg,cls="mid"){
-document.getElementById("status").innerHTML+=`<div class="${cls}">${msg}</div>`
+function toggle(){
+document.body.classList.toggle("dark")
 }
 
-function proxy(u){
-return "https://corsproxy.io/?"+encodeURIComponent(u)
-}
+function parseDataset(){
 
-async function scanMol(mol){
+let text=document.getElementById("dataset").value
 
-log("Scanning "+mol)
+let rows=text.split("\n")
 
-let page=0
-let total=0
+let data=[]
 
-while(true){
+for(let r of rows){
 
-let url=`${BASE}?nomePrincipioAtivo=${encodeURIComponent(mol)}&page=${page}&size=100`
+let c=r.split("\t")
 
-try{
-
-let r=await fetch(proxy(url))
-
-if(!r.ok) throw "fetch fail"
-
-let j=await r.json()
-
-if(page===0) total=j.totalElements
-
-if(!j.content || j.content.length===0) break
-
-page++
-
-if(page*100>=total) break
-
-}catch(e){
-
-log("FAILED "+mol,"bad")
-return {mol,total:0,fail:true}
+data.push({
+mol:c[2],
+mah:c[5],
+form:c[8],
+plant:c[12]
+})
 
 }
 
-}
-
-log("DONE "+mol+" regs="+total,"good")
-
-return {mol,total}
+return data
 
 }
 
-function matchPrice(mol){
+function score(reg,mah,form,plant){
 
-let rows=priceData.filter(x=>x.principio && x.principio.toLowerCase().includes(mol.toLowerCase()))
+let s=0
 
-if(rows.length===0) return null
+if(reg<=3)s+=40
+else if(reg<=10)s+=25
+else if(reg<=30)s+=10
 
-let avg=rows.reduce((a,b)=>a+Number(b.pmc||0),0)/rows.length
+if(mah<=2)s+=20
+if(form<=2)s+=10
+if(plant<=3)s+=10
 
-return avg.toFixed(2)
-
-}
-
-function matchBuy(mol){
-
-let rows=buyData.filter(x=>x.objeto && x.objeto.toLowerCase().includes(mol.toLowerCase()))
-
-let total=rows.reduce((a,b)=>a+Number(b.valor||0),0)
-
-return total
+return s
 
 }
 
-async function run(){
+function badge(s){
 
-document.getElementById("status").innerHTML=""
+if(s>=60)return `<span class="badge good">HIGH</span>`
+if(s>=35)return `<span class="badge mid">MODERATE</span>`
+return `<span class="badge bad">LOW</span>`
 
-let lines=document.getElementById("input").value.split("\n")
+}
+
+function run(){
+
+let data=parseDataset()
+
+let mols=document.getElementById("inns").value.split("\n")
 
 let table=document.getElementById("out")
 
-table.innerHTML="<tr><th>Molecule</th><th>Registrations</th><th>Avg PMC</th><th>Gov Market</th></tr>"
+table.innerHTML="<tr><th>Molecule</th><th>Regs</th><th>MAH</th><th>Forms</th><th>Plants</th><th>Score</th><th>Opportunity</th></tr>"
 
-for(let l of lines){
+for(let m of mols){
 
-l=l.trim()
+m=m.trim()
 
-if(!l) continue
+if(!m)continue
 
-let r=await scanMol(l)
+let rows=data.filter(x=>x.mol && x.mol.toLowerCase().includes(m.toLowerCase()))
 
-let price=matchPrice(l)
-let buy=matchBuy(l)
+let regs=rows.length
+
+let mah=new Set(rows.map(x=>x.mah))
+let forms=new Set(rows.map(x=>x.form))
+let plants=new Set(rows.map(x=>x.plant))
+
+let s=score(regs,mah.size,forms.size,plants.size)
 
 table.innerHTML+=`
 <tr>
-<td>${l}</td>
-<td>${r.total}</td>
-<td>${price||"-"}</td>
-<td>${buy||"-"}</td>
+<td>${m}</td>
+<td>${regs}</td>
+<td>${mah.size}</td>
+<td>${forms.size}</td>
+<td>${plants.size}</td>
+<td>${s}</td>
+<td>${badge(s)}</td>
 </tr>
 `
 
 }
 
 }
-
-document.getElementById("priceFile").addEventListener("change",function(e){
-
-let file=e.target.files[0]
-
-let reader=new FileReader()
-
-reader.onload=function(evt){
-
-let wb=XLSX.read(evt.target.result,{type:"binary"})
-
-let sheet=wb.Sheets[wb.SheetNames[0]]
-
-priceData=XLSX.utils.sheet_to_json(sheet)
-
-log("Price file loaded "+priceData.length+" rows","good")
-
-}
-
-reader.readAsBinaryString(file)
-
-})
-
-document.getElementById("buyFile").addEventListener("change",function(e){
-
-let file=e.target.files[0]
-
-let reader=new FileReader()
-
-reader.onload=function(evt){
-
-let text=evt.target.result
-
-buyData=text.split("\n").map(x=>{
-
-let p=x.split(",")
-
-return {objeto:p[3],valor:p[5]}
-
-})
-
-log("Procurement file loaded","good")
-
-}
-
-reader.readAsText(file)
-
-})
 
 </script>
 
