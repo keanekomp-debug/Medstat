@@ -1,198 +1,1322 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-
-<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;600&display=swap" rel="stylesheet">
-
-<title>Brazil Pharma Portfolio Intelligence</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PharmaVector · Brazil BD Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,700;9..144,900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
+:root{
+  --bg:#05080f;--surface:#090e1b;--card:#0d1526;--card2:#111d35;
+  --border:#18284a;--border2:#1f3660;
+  --accent:#22d3ee;--accent2:#10b981;--accent3:#f59e0b;--accent4:#f43f5e;
+  --purple:#a78bfa;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#4b6080;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
 
-body{
-font-family:Figtree;
-background:#f3f4f6;
-color:#111;
-padding:30px;
-transition:.3s;
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:272px 1fr;grid-template-rows:56px 1fr;min-height:100vh}
+
+/* ── HEADER ── */
+.header{
+  grid-column:1/-1;background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:14px;
+  position:sticky;top:0;z-index:200;
+  box-shadow:0 2px 24px rgba(0,0,0,.4)
+}
+.logo{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:var(--accent);letter-spacing:-.5px;white-space:nowrap}
+.logo em{font-style:normal;color:var(--text3);font-weight:300;font-size:13px;margin-left:6px}
+.h-sep{flex:1}
+.h-pill{
+  padding:4px 10px;border-radius:99px;font-size:10px;
+  font-family:'JetBrains Mono',monospace;letter-spacing:.8px;
+  border:1px solid var(--border);color:var(--text3);
+  display:flex;align-items:center;gap:5px;
+  transition:all .25s
+}
+.h-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:all .25s}
+.h-pill.on{color:var(--accent2);border-color:rgba(16,185,129,.35)}
+.h-pill.on .dot{background:var(--accent2);box-shadow:0 0 6px var(--accent2)}
+.h-pill.warn{color:var(--accent3);border-color:rgba(245,158,11,.35)}
+.h-pill.warn .dot{background:var(--accent3)}
+.h-pill.err{color:var(--accent4);border-color:rgba(244,63,94,.35)}
+.h-pill.err .dot{background:var(--accent4)}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  background:var(--surface);border-right:1px solid var(--border);
+  padding:16px;overflow-y:auto;
+  display:flex;flex-direction:column;gap:14px
+}
+.sidebar-section-label{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  text-transform:uppercase;letter-spacing:2px;color:var(--text3);
+  margin-bottom:6px
 }
 
-.dark{
-background:#0f172a;
-color:white;
-}
+/* ── MAIN ── */
+.main{padding:22px;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
 
+/* ── CARD ── */
 .card{
-background:white;
-padding:20px;
-border-radius:14px;
-box-shadow:0 6px 20px rgba(0,0,0,.08);
-margin-bottom:20px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:18px;
+  transition:border-color .2s
+}
+.card:hover{border-color:var(--border2)}
+.card-title{font-size:13px;font-weight:600;color:var(--text)}
+.card-sub{font-size:11px;color:var(--text3);margin-top:1px}
+
+/* ── INPUTS ── */
+textarea,input[type=text],input[type=password],select{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  padding:9px 11px;outline:none;transition:border-color .2s
+}
+textarea:focus,input:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;height:150px}
+select{cursor:pointer;background:var(--bg);-webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234b6080'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:26px
 }
 
-.dark .card{
-background:#111827;
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;border-radius:8px;border:none;cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;
+  transition:all .2s;white-space:nowrap
+}
+.btn-primary{background:var(--accent);color:#05080f}
+.btn-primary:hover{background:#67e8f9;transform:translateY(-1px);box-shadow:0 4px 18px rgba(34,211,238,.3)}
+.btn-ghost{background:var(--card2);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+.btn-success{background:var(--accent2);color:#05080f}
+.btn-success:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(16,185,129,.3)}
+.btn-full{width:100%;justify-content:center;padding:11px 16px;font-size:13px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+
+/* ── UPLOAD ZONE ── */
+.upload-zone{
+  border:2px dashed var(--border);border-radius:10px;
+  padding:16px;text-align:center;cursor:pointer;
+  transition:all .2s;color:var(--text3);font-size:12px
+}
+.upload-zone:hover,.upload-zone.drag-over{
+  border-color:var(--accent);background:rgba(34,211,238,.04);color:var(--text2)
 }
 
-textarea{
-width:100%;
-height:140px;
-margin-top:10px;
+/* ── TABS ── */
+.tabs{
+  display:flex;gap:2px;background:var(--surface);
+  padding:4px;border-radius:10px;border:1px solid var(--border);
+  flex-wrap:wrap
 }
-
-button{
-background:#22c55e;
-border:none;
-padding:10px 18px;
-border-radius:8px;
-cursor:pointer;
-margin-top:10px;
+.tab{
+  padding:6px 13px;border-radius:7px;border:none;background:none;
+  color:var(--text3);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:12px;font-weight:600;transition:all .15s;white-space:nowrap
 }
+.tab:hover{color:var(--text2)}
+.tab.active{background:var(--card);color:var(--accent);border:1px solid var(--border)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
 
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{
+  background:var(--card2);color:var(--text3);
+  font-family:'JetBrains Mono',monospace;font-size:9.5px;
+  text-transform:uppercase;letter-spacing:1px;font-weight:500;
+  padding:9px 13px;text-align:left;white-space:nowrap;
+  cursor:pointer;user-select:none;transition:color .15s
+}
+th:hover{color:var(--text)}
+td{padding:9px 13px;border-top:1px solid var(--border);color:var(--text);white-space:nowrap}
+tr:hover td{background:rgba(34,211,238,.025)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+
+/* ── BADGES ── */
 .badge{
-padding:4px 10px;
-border-radius:999px;
-font-size:12px;
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 8px;border-radius:99px;
+  font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  letter-spacing:.3px
 }
+.bg-high{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}
+.bg-mod{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.bg-low{background:rgba(244,63,94,.15);color:#f43f5e;border:1px solid rgba(244,63,94,.3)}
+.bg-info{background:rgba(34,211,238,.1);color:var(--accent);border:1px solid rgba(34,211,238,.25)}
+.bg-purple{background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.3)}
 
-.good{background:#bbf7d0}
-.mid{background:#fde68a}
-.bad{background:#fecaca}
+/* ── SCORE BAR ── */
+.sbar-wrap{display:flex;align-items:center;gap:7px}
+.sbar{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.sbar-fill{height:100%;border-radius:2px;transition:width .7s cubic-bezier(.4,0,.2,1)}
 
+/* ── STAT CARDS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
+.stat-label{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.stat-value{font-family:'Fraunces',serif;font-size:26px;font-weight:700;line-height:1}
+.stat-sub{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* ── SCORE CIRCLE ── */
+.sc{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-size:15px;font-weight:700;border:2px solid;flex-shrink:0}
+.sc-h{color:var(--accent2);border-color:var(--accent2);background:rgba(16,185,129,.1)}
+.sc-m{color:var(--accent3);border-color:var(--accent3);background:rgba(245,158,11,.1)}
+.sc-l{color:var(--accent4);border-color:var(--accent4);background:rgba(244,63,94,.1)}
+
+/* ── CHART BARS ── */
+.chart-row{display:flex;align-items:center;gap:9px;padding:4px 0}
+.chart-label{width:170px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)}
+.chart-bw{flex:1;height:20px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.chart-bar{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:7px;
+  font-size:10px;font-weight:700;color:#05080f;min-width:4px;transition:width .6s ease}
+.chart-val{width:90px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)}
+
+/* ── INFO BOX ── */
+.info{background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.2);border-radius:8px;padding:11px 13px;font-size:12px;color:var(--text2);line-height:1.6}
+.info.amber{background:rgba(245,158,11,.06);border-color:rgba(245,158,11,.2)}
+.info.green{background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.2)}
+
+/* ── AI CARDS ── */
+.ai-rec{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;transition:border-color .2s}
+.ai-rec:hover{border-color:var(--border2)}
+.ai-rec.p-high{border-left:3px solid var(--accent2)}
+.ai-rec.p-medium{border-left:3px solid var(--accent3)}
+.ai-rec.p-low{border-left:3px solid var(--text3)}
+
+/* ── MOL CHIPS ── */
+.mol-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.mol-chip{
+  padding:3px 9px;border-radius:99px;background:var(--card2);
+  border:1px solid var(--border);color:var(--text3);
+  font-size:10px;font-family:'JetBrains Mono',monospace;
+  cursor:pointer;transition:all .15s
+}
+.mol-chip.active{background:rgba(34,211,238,.12);border-color:rgba(34,211,238,.35);color:var(--accent)}
+
+/* ── CLIFF ITEMS ── */
+.cliff-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);margin-bottom:5px}
+.cliff-mol{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent)}
+.cliff-desc{font-size:10px;color:var(--text3);margin-top:1px}
+
+/* ── MISC ── */
+.divider{height:1px;background:var(--border);margin:6px 0}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.cursor-blink{display:inline-block;width:7px;height:13px;background:var(--accent);border-radius:1px;animation:blink .8s infinite;vertical-align:middle;margin-left:3px}
+.section-heading{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--text)}
+.sub-label{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1.8px;color:var(--text3);margin-bottom:8px}
+.hl-c{color:var(--accent)} .hl-g{color:var(--accent2)} .hl-a{color:var(--accent3)} .hl-r{color:var(--accent4)}
+.fnum{font-family:'Fraunces',serif;font-weight:700}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:50px 20px;color:var(--text3)}
+.empty .ico{font-size:36px;margin-bottom:10px}
+.empty p{font-size:12px;line-height:1.6}
+
+/* ── WELCOME GRID ── */
+.welcome-feat{
+  text-align:left;background:var(--card2);border:1px solid var(--border);
+  border-radius:10px;padding:14px 16px;
+  transition:all .2s
+}
+.welcome-feat:hover{border-color:var(--border2);transform:translateY(-2px)}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeUp .3s ease forwards}
+
+/* ── SCORE BREAKDOWN MINI ── */
+.score-breakdown{display:flex;gap:4px;align-items:center}
+.sb-seg{height:8px;border-radius:2px;min-width:4px;transition:width .6s ease}
+
+/* ── RESPONSIVE ── */
+@media(max-width:860px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .layout .header{grid-column:1/-1}
+}
 </style>
-
 </head>
-
 <body>
+<div class="layout">
 
-<button onclick="toggle()">🌙 Toggle Mode</button>
+<!-- ───── HEADER ───── -->
+<header class="header">
+  <div class="logo">PharmaVector <em>/ Brazil BD Intelligence</em></div>
+  <div class="h-sep"></div>
+  <div class="h-pill" id="dataPill"><div class="dot"></div><span>NO DATA</span></div>
+  <div class="h-pill" id="aiPill" style="margin-left:6px"><div class="dot"></div><span>AI OFFLINE</span></div>
+</header>
 
-<div class="card">
+<!-- ───── SIDEBAR ───── -->
+<aside class="sidebar">
 
-<h2>Paste Molecules</h2>
+  <div>
+    <div class="sidebar-section-label">ANVISA Data Source</div>
+    <div class="card" style="padding:13px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">
+        Auto-fetch CMED price table or upload manually.
+      </div>
+      <button class="btn btn-ghost btn-full" onclick="fetchANVISA()" id="fetchBtn" style="font-size:12px">
+        ⬇ Auto-Fetch CMED
+      </button>
+      <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:10px;color:var(--text3)">OR</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <div class="upload-zone" onclick="document.getElementById('fileInput').click()" id="uploadZone">
+        <input type="file" id="fileInput" accept=".xls,.xlsx" onchange="handleFileUpload(event)" style="display:none">
+        <div style="font-size:22px;margin-bottom:3px">📂</div>
+        <div>Drop CMED .xlsx here</div>
+      </div>
+      <div id="dataMsg" style="font-size:10px;color:var(--text3);margin-top:7px;text-align:center;line-height:1.5"></div>
+    </div>
+  </div>
 
-<textarea id="inns">
-vonoprazana
+  <div class="divider"></div>
+
+  <div>
+    <div class="sidebar-section-label">AI Engine (Optional)</div>
+    <div class="card" style="padding:13px">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:5px">Anthropic API Key</div>
+      <input type="password" id="apiKey" placeholder="sk-ant-api03-…" style="height:34px">
+      <div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.5">
+        Powers AI portfolio recommendations via Claude. Get a free key at 
+        <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div>
+    <div class="sidebar-section-label">Scoring Weights</div>
+    <div class="card" style="padding:13px;font-size:11px">
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="color:var(--text2)">Competition</span>
+          <span class="mono hl-c" style="font-size:11px">40 pts</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="color:var(--text2)">Patent Proxy</span>
+          <span class="mono" style="color:var(--purple);font-size:11px">25 pts</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="color:var(--text2)">Price Margin</span>
+          <span class="mono hl-a" style="font-size:11px">20 pts</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="color:var(--text2)">FDC Premium</span>
+          <span class="mono hl-g" style="font-size:11px">15 pts</span>
+        </div>
+        <div style="height:1px;background:var(--border)"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600">Total</span>
+          <span class="mono" style="color:var(--text);font-size:11px;font-weight:700">100 pts</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div>
+    <div class="sidebar-section-label">About</div>
+    <div style="font-size:10px;color:var(--text3);line-height:1.7;padding:0 2px">
+      Pharma BD portfolio intelligence for the Brazilian generic drug market.<br>
+      Uses ANVISA CMED pricing data, competition modelling, patent cliff proxies, and AI (Claude) for clinical protocol context.<br><br>
+      v2.0 · 100% browser-based · Zero install · Free
+    </div>
+  </div>
+
+</aside>
+
+<!-- ───── MAIN ───── -->
+<main class="main">
+
+  <!-- INPUT PANEL -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px">
+        <div style="width:30px;height:30px;border-radius:7px;background:rgba(34,211,238,.1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">💊</div>
+        <div><div class="card-title">Molecule Pipeline</div><div class="card-sub">One INN per line (Portuguese or English)</div></div>
+      </div>
+      <textarea id="molInput" placeholder="vonoprazana&#10;empagliflozina&#10;bilastina&#10;osimertinibe&#10;sacubitril + valsartana">vonoprazana
 empagliflozina
 bilastina
-</textarea>
+sacubitril + valsartana</textarea>
+    </div>
 
-</div>
+    <div class="card">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px">
+        <div style="width:30px;height:30px;border-radius:7px;background:rgba(16,185,129,.1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">⚙</div>
+        <div><div class="card-title">Analysis Settings</div><div class="card-sub">Filter & configure the scan</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px">Min PMC Filter (R$)</div>
+          <input type="text" id="minPrice" value="0" style="height:32px">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px">Target Product Type</div>
+          <select id="targetMarket">
+            <option value="all">All Types</option>
+            <option value="genérico">Genérico only</option>
+            <option value="similar">Similar only</option>
+            <option value="referência">Referência only</option>
+          </select>
+        </div>
+        <button class="btn btn-success btn-full" onclick="runAnalysis()" id="runBtn" style="margin-top:2px;font-size:13px">
+          ▶&nbsp; Run Portfolio Analysis
+        </button>
+      </div>
+    </div>
+  </div>
 
-<div class="card">
+  <!-- WELCOME STATE -->
+  <div id="welcomeState">
+    <div class="card" style="text-align:center;padding:48px 32px">
+      <div style="font-size:48px;margin-bottom:14px">⚗️</div>
+      <div class="section-heading" style="justify-content:center;margin-bottom:8px">Brazil Pharma BD Intelligence</div>
+      <p style="color:var(--text3);font-size:12px;max-width:480px;margin:0 auto;line-height:1.8">
+        Load the ANVISA CMED dataset, enter your molecule pipeline, and get instant BD attractiveness scores,
+        MAH market share, FDC detection, patent cliff proxies, and Claude AI portfolio recommendations.
+      </p>
+      <div style="display:flex;justify-content:center;gap:10px;margin-top:28px;flex-wrap:wrap">
+        <div class="welcome-feat"><div style="font-size:22px;margin-bottom:5px">🔬</div><div style="font-size:11px;font-weight:600">FDC Scanner</div><div style="font-size:10px;color:var(--text3);margin-top:2px">Fixed-dose combo detection</div></div>
+        <div class="welcome-feat"><div style="font-size:22px;margin-bottom:5px">📊</div><div style="font-size:11px;font-weight:600">MAH Market Share</div><div style="font-size:10px;color:var(--text3);margin-top:2px">HHI concentration analysis</div></div>
+        <div class="welcome-feat"><div style="font-size:22px;margin-bottom:5px">⏳</div><div style="font-size:11px;font-weight:600">Patent Cliff Proxy</div><div style="font-size:10px;color:var(--text3);margin-top:2px">Market maturity signals</div></div>
+        <div class="welcome-feat"><div style="font-size:22px;margin-bottom:5px">🏆</div><div style="font-size:11px;font-weight:600">Competition Scoring</div><div style="font-size:10px;color:var(--text3);margin-top:2px">Attractiveness model</div></div>
+        <div class="welcome-feat"><div style="font-size:22px;margin-bottom:5px">🤖</div><div style="font-size:11px;font-weight:600">AI Recommendations</div><div style="font-size:10px;color:var(--text3);margin-top:2px">Protocol-grounded BD strategy</div></div>
+      </div>
+    </div>
+  </div>
 
-<h2>Paste ANVISA Dataset</h2>
+  <!-- RESULTS SECTION -->
+  <div id="resultsSection" style="display:none;flex-direction:column;gap:16px">
 
-<textarea id="dataset"></textarea>
+    <!-- KPI Row -->
+    <div class="stats-grid" id="kpiGrid"></div>
 
-<button onclick="run()">Analyse Portfolio</button>
+    <!-- Tab Bar -->
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="tabs" id="mainTabs">
+        <button class="tab active" onclick="switchTab('overview')">Overview</button>
+        <button class="tab" onclick="switchTab('fdc')">FDC Scanner</button>
+        <button class="tab" onclick="switchTab('mah')">MAH Share</button>
+        <button class="tab" onclick="switchTab('patent')">Patent Cliff</button>
+        <button class="tab" onclick="switchTab('comp')">Competition</button>
+        <button class="tab" onclick="switchTab('price')">Pricing</button>
+        <button class="tab" onclick="switchTab('ai')">AI Recommendations</button>
+      </div>
+      <button class="btn btn-ghost" onclick="exportCSV()" style="font-size:11px;padding:6px 12px;margin-left:auto">⬇ CSV</button>
+    </div>
 
-</div>
+    <!-- Overview -->
+    <div id="tab-overview" class="tab-panel active card" style="padding:0;overflow:hidden">
+      <div id="overviewContent"></div>
+    </div>
 
-<div class="card">
+    <!-- FDC Scanner -->
+    <div id="tab-fdc" class="tab-panel card">
+      <div id="fdcContent"></div>
+    </div>
 
-<table id="out"></table>
+    <!-- MAH Share -->
+    <div id="tab-mah" class="tab-panel card">
+      <div id="mahContent"></div>
+    </div>
 
-</div>
+    <!-- Patent Cliff -->
+    <div id="tab-patent" class="tab-panel card">
+      <div id="patentContent"></div>
+    </div>
+
+    <!-- Competition -->
+    <div id="tab-comp" class="tab-panel card" style="padding:0;overflow:hidden">
+      <div id="compContent"></div>
+    </div>
+
+    <!-- Pricing -->
+    <div id="tab-price" class="tab-panel card">
+      <div id="priceContent"></div>
+    </div>
+
+    <!-- AI -->
+    <div id="tab-ai" class="tab-panel card">
+      <div id="aiContent">
+        <div class="empty">
+          <div class="ico">🤖</div>
+          <p>Click <strong style="color:var(--text2)">Generate AI Recommendations</strong> to receive protocol-grounded portfolio strategy from Claude.<br><br>Requires an Anthropic API key (enter in sidebar).</p>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="runAI()" id="aiBtn" style="margin-top:14px">✨ Generate AI Recommendations</button>
+      </div>
+    </div>
+
+  </div><!-- /resultsSection -->
+</main>
+</div><!-- /layout -->
 
 <script>
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let anvisaData = [];
+let results    = [];
+let activeMol  = null;
+let sortDir    = -1;
+let activeTab  = 'overview';
 
-function toggle(){
-document.body.classList.toggle("dark")
+// ═══════════════════════════════════════════════
+//  ANVISA FETCH
+// ═══════════════════════════════════════════════
+const ANVISA_URL = 'https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos/arquivos/xls_conformidade_gov_20260309_101927947.xlsx/@@download/file';
+
+async function fetchANVISA() {
+  const btn = document.getElementById('fetchBtn');
+  btn.disabled = true; btn.textContent = '⟳ Fetching…';
+  setDataMsg('Connecting to ANVISA CMED…');
+
+  const proxies = [
+    `https://corsproxy.io/?${encodeURIComponent(ANVISA_URL)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(ANVISA_URL)}`
+  ];
+
+  for (const px of proxies) {
+    try {
+      setDataMsg('Trying proxy…');
+      const r = await fetch(px);
+      if (!r.ok) continue;
+      const buf = await r.arrayBuffer();
+      processXLSX(buf);
+      btn.disabled = false; btn.textContent = '✓ Loaded';
+      return;
+    } catch(e){ console.warn('Proxy failed:', e); }
+  }
+
+  setDataMsg('⚠ Auto-fetch failed — please download & upload the file manually.\nGet it from: anvisa.gov.br/cmed');
+  btn.disabled = false; btn.textContent = '↺ Retry';
 }
 
-function parseDataset(){
-
-let text=document.getElementById("dataset").value
-
-let rows=text.split("\n")
-
-let data=[]
-
-for(let r of rows){
-
-let c=r.split("\t")
-
-data.push({
-mol:c[2],
-mah:c[5],
-form:c[8],
-plant:c[12]
-})
-
+function handleFileUpload(e) {
+  const f = e.target.files[0]; if(!f) return;
+  setDataMsg('Reading ' + f.name + '…');
+  const r = new FileReader();
+  r.onload = ev => processXLSX(ev.target.result);
+  r.readAsArrayBuffer(f);
 }
 
-return data
-
+function processXLSX(buf) {
+  try {
+    const wb = XLSX.read(buf, { type:'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    anvisaData = parseANVISA(raw);
+    setDataMsg('✓ ' + anvisaData.length.toLocaleString('pt-BR') + ' records loaded');
+    setPill('dataPill', 'DATA READY', 'on');
+  } catch(e) {
+    setDataMsg('✗ Parse error: ' + e.message);
+    setPill('dataPill', 'PARSE ERROR', 'err');
+  }
 }
 
-function score(reg,mah,form,plant){
-
-let s=0
-
-if(reg<=3)s+=40
-else if(reg<=10)s+=25
-else if(reg<=30)s+=10
-
-if(mah<=2)s+=20
-if(form<=2)s+=10
-if(plant<=3)s+=10
-
-return s
-
+function setDataMsg(t) {
+  document.getElementById('dataMsg').textContent = t;
 }
 
-function badge(s){
-
-if(s>=60)return `<span class="badge good">HIGH</span>`
-if(s>=35)return `<span class="badge mid">MODERATE</span>`
-return `<span class="badge bad">LOW</span>`
-
+// ═══════════════════════════════════════════════
+//  PARSE ANVISA
+// ═══════════════════════════════════════════════
+function nh(s){ // normalise header
+  return String(s||'').toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^A-Z0-9 ]/g,'').trim();
 }
 
-function run(){
+function parseANVISA(raw) {
+  let hRow = -1, cols = {};
+  for (let i = 0; i < Math.min(20, raw.length); i++) {
+    const row = raw[i];
+    if (!row) continue;
+    for (let j = 0; j < row.length; j++) {
+      const h = nh(row[j]);
+      if (h.includes('SUBSTANC') || h === 'SUBSTANCIA') { hRow = i; break; }
+    }
+    if (hRow >= 0) break;
+  }
 
-let data=parseDataset()
+  if (hRow < 0) { // fallback: assume default column order
+    cols = { substance:0, lab:2, presentation:5, description:4, pf:12, pmc:22, type:-1 };
+    hRow = 0;
+  } else {
+    raw[hRow].forEach((cell, j) => {
+      const h = nh(cell);
+      if (h.includes('SUBSTANC')) cols.substance = j;
+      else if ((h.includes('LABORATOR') || h === 'LABORATORIO') && cols.lab === undefined) cols.lab = j;
+      else if (h.includes('APRESENT')) cols.presentation = j;
+      else if (h.includes('DESCRIC') && cols.description === undefined) cols.description = j;
+      else if (h === 'PF 0' || h === 'PF SEM IMPOSTO') cols.pf = j;
+      else if (h === 'PMC 0') cols.pmc = j;
+      else if (h.includes('TIPO') && h.includes('PRODUTO')) cols.type = j;
+      else if (h.includes('GGREM') || h === 'CODIGO GGREM') cols.ggrem = j;
+    });
+    if (cols.substance === undefined) cols.substance = 0;
+    if (cols.lab === undefined) cols.lab = 2;
+    if (cols.presentation === undefined) cols.presentation = 5;
+  }
 
-let mols=document.getElementById("inns").value.split("\n")
+  const out = [];
+  for (let i = hRow + 1; i < raw.length; i++) {
+    const row = raw[i];
+    if (!row) continue;
+    const sub = String(row[cols.substance]||'').trim();
+    if (!sub || sub.length < 2) continue;
 
-let table=document.getElementById("out")
+    const pfRaw = cols.pf >= 0 ? String(row[cols.pf]||'') : '';
+    const pmcRaw = cols.pmc >= 0 ? String(row[cols.pmc]||'') : '';
 
-table.innerHTML="<tr><th>Molecule</th><th>Regs</th><th>MAH</th><th>Forms</th><th>Plants</th><th>Score</th><th>Opportunity</th></tr>"
-
-for(let m of mols){
-
-m=m.trim()
-
-if(!m)continue
-
-let rows=data.filter(x=>x.mol && x.mol.toLowerCase().includes(m.toLowerCase()))
-
-let regs=rows.length
-
-let mah=new Set(rows.map(x=>x.mah))
-let forms=new Set(rows.map(x=>x.form))
-let plants=new Set(rows.map(x=>x.plant))
-
-let s=score(regs,mah.size,forms.size,plants.size)
-
-table.innerHTML+=`
-<tr>
-<td>${m}</td>
-<td>${regs}</td>
-<td>${mah.size}</td>
-<td>${forms.size}</td>
-<td>${plants.size}</td>
-<td>${s}</td>
-<td>${badge(s)}</td>
-</tr>
-`
-
+    out.push({
+      substance: sub,
+      lab:          String(row[cols.lab]||'').trim(),
+      presentation: String(row[cols.presentation]||'').trim(),
+      description:  cols.description >= 0 ? String(row[cols.description]||'').trim() : '',
+      pf:  parseFloat(pfRaw.replace(',','.')) || 0,
+      pmc: parseFloat(pmcRaw.replace(',','.')) || 0,
+      type: cols.type >= 0 ? String(row[cols.type]||'').trim().toLowerCase() : ''
+    });
+  }
+  return out;
 }
 
+// ═══════════════════════════════════════════════
+//  ANALYSIS ENGINE
+// ═══════════════════════════════════════════════
+function matchMol(mol, row) {
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const sub = norm(row.substance);
+  const m   = norm(mol);
+  if (sub.includes(m) || m.includes(sub)) return true;
+  // partial match on first 7 chars
+  const m7 = m.substring(0, 7);
+  return m7.length >= 4 && sub.includes(m7);
 }
 
+function isFDC(row) {
+  return row.substance.includes('+') || (row.description && row.description.includes('+'));
+}
+
+function patentProxy(rows) {
+  const types  = rows.map(r => r.type.toLowerCase());
+  const nGen   = types.filter(t => t.includes('gen')).length;
+  const nSim   = types.filter(t => t.includes('similar')).length;
+  const nRef   = types.filter(t => t.includes('refer') || t.includes('orig') || t.includes('brand')).length;
+  const nMAH   = new Set(rows.map(r => r.lab)).size;
+  const noGenData = !rows.some(r => r.type);
+
+  if (rows.length === 0)
+    return { status:'UNKNOWN', label:'No Data', icon:'❓', color:'var(--text3)', pScore:10, desc:'Molecule not found in ANVISA CMED dataset. May be pre-launch, niche, or not marketed in Brazil.' };
+
+  const genericComp = nGen + nSim;
+  if (genericComp === 0 && (nRef > 0 || nMAH <= 2))
+    return { status:'PROTECTED', label:'On Patent', icon:'🔒', color:'var(--accent4)', pScore:80, desc:'No generics/similars detected. Likely under patent or data exclusivity. Consider in-licensing or partnership approach.' };
+  if (genericComp <= 2 && nMAH <= 4)
+    return { status:'CLIFF', label:'Patent Cliff', icon:'⚠️', color:'var(--accent3)', pScore:70, desc:'Minimal generic competition. Market is at or approaching the patent cliff — strong first-mover opportunity.' };
+  if (genericComp <= 7 && nMAH <= 10)
+    return { status:'EARLY', label:'Early Generic', icon:'📉', color:'var(--accent)', pScore:45, desc:'Patent likely expired recently. Generic market forming — differentiated entry or FDC strategy recommended.' };
+  return { status:'MATURE', label:'Mature Generic', icon:'🔓', color:'var(--accent2)', pScore:20, desc:'Fully genericized. High price erosion expected. FDC, specialty formulation, or high-volume API play required.' };
+}
+
+function scoreRows(mol, rows) {
+  const mahs  = new Set(rows.map(r => r.lab)).size;
+  const forms = new Set(rows.map(r => r.presentation)).size;
+  const fdcR  = rows.filter(isFDC);
+  const hasFDC = fdcR.length > 0;
+  const pat   = patentProxy(rows);
+  const prices = rows.map(r => r.pmc).filter(p => p > 0);
+  const avgP  = prices.length ? prices.reduce((a,b)=>a+b,0)/prices.length : 0;
+  const maxP  = prices.length ? Math.max(...prices) : 0;
+  const minP  = prices.length ? Math.min(...prices) : 0;
+
+  // 1. Competition (max 40)
+  let comp;
+  if (rows.length === 0) comp = 30;          // unknown → middle
+  else if (mahs <= 1)    comp = 40;
+  else if (mahs <= 3)    comp = 33;
+  else if (mahs <= 7)    comp = 22;
+  else if (mahs <= 15)   comp = 12;
+  else                   comp = 5;
+
+  // 2. Patent proxy (max 25)
+  const patS = Math.round(pat.pScore * 0.25);
+
+  // 3. Price margin (max 20)
+  let price;
+  if (avgP > 2000) price = 20;
+  else if (avgP > 800) price = 17;
+  else if (avgP > 300) price = 13;
+  else if (avgP > 80)  price = 9;
+  else if (avgP > 0)   price = 5;
+  else                 price = 7; // no data → middle
+
+  // 4. FDC premium (max 15)
+  const fdcS = hasFDC ? 15 : 0;
+
+  const total = comp + patS + price + fdcS;
+  return { mol, total, comp, patS, price, fdcS, mahs, forms, hasFDC, pat, avgP, maxP, minP, rows, fdcRows:fdcR };
+}
+
+function attrLabel(s) {
+  if (s >= 65) return { l:'HIGH',     cl:'bg-high',   sc:'sc-h', bdCl:'hl-g' };
+  if (s >= 40) return { l:'MODERATE', cl:'bg-mod',    sc:'sc-m', bdCl:'hl-a' };
+  return            { l:'LOW',      cl:'bg-low',    sc:'sc-l', bdCl:'hl-r' };
+}
+
+function runAnalysis() {
+  const mols = document.getElementById('molInput').value.split('\n').map(m=>m.trim()).filter(Boolean);
+  if (!mols.length) { alert('Enter at least one molecule INN.'); return; }
+
+  const minP = parseFloat(document.getElementById('minPrice').value)||0;
+  const tgt  = document.getElementById('targetMarket').value;
+
+  results = [];
+  for (const mol of mols) {
+    let rows = anvisaData.filter(r => matchMol(mol, r));
+    if (minP > 0)   rows = rows.filter(r => r.pmc >= minP || r.pmc === 0);
+    if (tgt !== 'all') {
+      const f = rows.filter(r => r.type.includes(tgt.substring(0,5)));
+      if (f.length) rows = f;
+    }
+    results.push(scoreRows(mol, rows));
+  }
+  results.sort((a,b) => b.total - a.total);
+  activeMol = results[0]?.mol || null;
+
+  renderAll();
+  document.getElementById('resultsSection').style.display = 'flex';
+  document.getElementById('welcomeState').style.display   = 'none';
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════
+function renderAll() {
+  renderKPIs();
+  renderOverview();
+  renderFDC();
+  renderMAH();
+  renderPatent();
+  renderComp();
+  renderPrice();
+  resetAI();
+}
+
+function renderKPIs() {
+  const high  = results.filter(r=>r.total>=65).length;
+  const mod   = results.filter(r=>r.total>=40&&r.total<65).length;
+  const fdc   = results.filter(r=>r.hasFDC).length;
+  const prot  = results.filter(r=>r.pat.status==='PROTECTED').length;
+  const cliff = results.filter(r=>r.pat.status==='CLIFF').length;
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Molecules</div>
+      <div class="stat-value hl-c">${results.length}</div>
+      <div class="stat-sub">scanned vs CMED</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">High Opportunity</div>
+      <div class="stat-value hl-g">${high}</div>
+      <div class="stat-sub">Score ≥ 65</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Moderate</div>
+      <div class="stat-value hl-a">${mod}</div>
+      <div class="stat-sub">Score 40–64</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">FDC Detected</div>
+      <div class="stat-value" style="color:var(--purple)">${fdc}</div>
+      <div class="stat-sub">fixed-dose combos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">On Patent</div>
+      <div class="stat-value hl-r">${prot}</div>
+      <div class="stat-sub">in-license targets</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">At Patent Cliff</div>
+      <div class="stat-value hl-a">${cliff}</div>
+      <div class="stat-sub">first-mover window</div>
+    </div>`;
+}
+
+function renderOverview() {
+  let h = `<div class="table-wrap" style="border-radius:12px"><table>
+    <tr>
+      <th onclick="doSort('mol')">MOLECULE ⇅</th>
+      <th onclick="doSort('total')">SCORE ⇅</th>
+      <th>BREAKDOWN</th>
+      <th>ATTRACTIVENESS</th>
+      <th onclick="doSort('mahs')">MAHs ⇅</th>
+      <th>FDC</th>
+      <th>PATENT SIGNAL</th>
+      <th onclick="doSort('avgP')">AVG PMC ⇅</th>
+      <th>REGS</th>
+      <th>BD SIGNAL</th>
+    </tr>`;
+
+  results.forEach((r,i) => {
+    const a = attrLabel(r.total);
+    const bd = bdSignal(r);
+    h += `<tr class="fade-in" style="animation-delay:${i*40}ms">
+      <td class="mono hl-c">${r.mol}</td>
+      <td>
+        <div class="sbar-wrap">
+          <div class="sbar">
+            <div class="sbar-fill" style="width:${r.total}%;background:${r.total>=65?'var(--accent2)':r.total>=40?'var(--accent3)':'var(--accent4)'}"></div>
+          </div>
+          <span class="mono" style="font-size:11px;width:28px;text-align:right;color:var(--text2)">${r.total}</span>
+        </div>
+      </td>
+      <td>
+        <div class="score-breakdown">
+          <div class="sb-seg" title="Competition: ${r.comp}/40" style="width:${Math.round(r.comp/40*40)}px;background:var(--accent)"></div>
+          <div class="sb-seg" title="Patent: ${r.patS}/25"  style="width:${Math.round(r.patS/25*28)}px;background:var(--purple)"></div>
+          <div class="sb-seg" title="Price: ${r.price}/20"  style="width:${Math.round(r.price/20*24)}px;background:var(--accent3)"></div>
+          <div class="sb-seg" title="FDC: ${r.fdcS}/15"     style="width:${Math.round(r.fdcS/15*18)}px;background:var(--accent2)"></div>
+        </div>
+      </td>
+      <td><span class="badge ${a.cl}">${a.l}</span></td>
+      <td class="mono">${r.mahs||'—'}</td>
+      <td>${r.hasFDC?'<span class="badge bg-purple">FDC</span>':'<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+      <td style="font-size:11px">${r.pat.icon} ${r.pat.label}</td>
+      <td class="mono">${r.avgP>0?'R$ '+r.avgP.toFixed(2):'—'}</td>
+      <td class="mono">${r.rows.length||0}</td>
+      <td style="font-size:11px">${bd}</td>
+    </tr>`;
+  });
+
+  h += '</table></div>';
+  document.getElementById('overviewContent').innerHTML = h;
+}
+
+function bdSignal(r) {
+  if (r.pat.status === 'PROTECTED') return '🤝 In-License';
+  if (r.pat.status === 'CLIFF')     return '⚡ First Generic';
+  if (r.hasFDC)                     return '🧬 FDC Play';
+  if (r.mahs <= 3)                  return '📈 Niche Entry';
+  if (r.rows.length === 0)          return '❓ Research Needed';
+  return '🏭 Volume Generic';
+}
+
+// ── FDC ──
+function renderFDC() {
+  const fdcMols  = results.filter(r=>r.hasFDC);
+  const monoMols = results.filter(r=>!r.hasFDC);
+
+  let h = `<div class="info" style="margin-bottom:14px">
+    <strong>FDC Scanner</strong> — Fixed-dose combinations are detected when SUBSTÂNCIA contains "+".
+    FDCs often command price premiums, face reduced generic competition, and represent differentiation opportunities.
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div>
+      <div class="sub-label">FDC (${fdcMols.length})</div>`;
+
+  if (!fdcMols.length) h += '<div style="color:var(--text3);font-size:11px">None detected in pipeline.</div>';
+  fdcMols.forEach(r => {
+    const combos = [...new Set(r.rows.filter(isFDC).map(row=>row.substance))].slice(0,2);
+    h += `<div class="cliff-item">
+      <span style="font-size:18px">🧬</span>
+      <div style="flex:1;min-width:0">
+        <div class="cliff-mol">${r.mol}</div>
+        <div class="cliff-desc" style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${combos[0]||'Multi-component'}</div>
+      </div>
+      <span class="badge bg-purple">FDC</span>
+    </div>`;
+  });
+
+  h += `</div><div>
+    <div class="sub-label">MONO-COMPONENT (${monoMols.length})</div>`;
+  monoMols.slice(0,12).forEach(r => {
+    h += `<div class="cliff-item">
+      <span style="font-size:18px">💊</span>
+      <div style="flex:1"><div class="cliff-mol">${r.mol}</div><div class="cliff-desc">${r.rows.length} regs · ${r.mahs} MAHs</div></div>
+      <span class="badge bg-info">MONO</span>
+    </div>`;
+  });
+
+  h += '</div></div>';
+
+  if (fdcMols.length) {
+    h += `<div class="divider" style="margin:14px 0"></div>
+    <div class="sub-label">FDC MARKET DETAIL</div>
+    <div class="table-wrap"><table>
+      <tr><th>MOLECULE</th><th>COMBINATIONS ON MARKET</th><th>MAHs</th><th>AVG PMC</th><th>SCORE</th></tr>`;
+    fdcMols.forEach(r => {
+      const combos = [...new Set(r.rows.filter(isFDC).map(row=>row.substance))];
+      h += `<tr>
+        <td class="mono hl-c">${r.mol}</td>
+        <td style="font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis">${combos.slice(0,3).join(' · ')||'—'}</td>
+        <td class="mono">${r.mahs}</td>
+        <td class="mono">${r.avgP>0?'R$ '+r.avgP.toFixed(2):'—'}</td>
+        <td><span class="badge ${attrLabel(r.total).cl}">${r.total}</span></td>
+      </tr>`;
+    });
+    h += '</table></div>';
+  }
+
+  document.getElementById('fdcContent').innerHTML = h;
+}
+
+// ── MAH ──
+function renderMAH() {
+  const chips = results.map(r =>
+    `<span class="mol-chip ${r.mol===activeMol?'active':''}" onclick="setActiveMol('${r.mol}')">${r.mol}</span>`
+  ).join('');
+  document.getElementById('mahContent').innerHTML =
+    `<div class="sub-label">SELECT MOLECULE</div>
+     <div class="mol-chips">${chips}</div>
+     <div id="mahDetail"></div>`;
+  if (activeMol) renderMAHDetail(activeMol);
+}
+
+function setActiveMol(mol) { activeMol = mol; renderMAH(); }
+
+function renderMAHDetail(mol) {
+  const r = results.find(x=>x.mol===mol);
+  if (!r) return;
+  if (!r.rows.length) {
+    document.getElementById('mahDetail').innerHTML = `<div class="empty" style="padding:24px"><div class="ico">📭</div><p>${mol} not found in ANVISA dataset.<br>No MAH data available.</p></div>`;
+    return;
+  }
+
+  const cnt = {};
+  r.rows.forEach(row => { const l=row.lab||'Unknown'; cnt[l]=(cnt[l]||0)+1; });
+  const total = r.rows.length;
+  const sorted = Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+  const top = sorted.slice(0,15);
+
+  const hhi = sorted.reduce((acc,[,c])=>acc+Math.pow(c/total*100,2),0);
+  const hhiR = Math.round(hhi);
+  const conc = hhiR>2500?{l:'Highly Concentrated',c:'var(--accent4)'}:hhiR>1500?{l:'Moderately Concentrated',c:'var(--accent3)'}:{l:'Competitive',c:'var(--accent2)'};
+
+  const topShare = top[0] ? Math.round(top[0][1]/total*100) : 0;
+
+  let h = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+    <div class="stat-card" style="padding:12px"><div class="stat-label">Total MAHs</div><div class="stat-value hl-c" style="font-size:22px">${sorted.length}</div></div>
+    <div class="stat-card" style="padding:12px"><div class="stat-label">HHI Index</div><div class="stat-value" style="font-size:22px;color:${conc.c}">${hhiR}</div><div class="stat-sub">${conc.l}</div></div>
+    <div class="stat-card" style="padding:12px"><div class="stat-label">Top MAH Share</div><div class="stat-value hl-a" style="font-size:22px">${topShare}%</div><div class="stat-sub" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${top[0]?.[0]||'—'}</div></div>
+  </div>
+  <div class="sub-label">REGISTRATION SHARE — ${mol.toUpperCase()}</div>`;
+
+  const COLS = ['var(--accent)','var(--accent2)','var(--accent3)','var(--purple)','var(--accent4)','#fb923c','#34d399','#60a5fa','#f9a8d4','#fcd34d','#a5f3fc','#d8b4fe','#86efac','#fca5a5','#93c5fd'];
+  const max = top[0]?.[1]||1;
+  top.forEach(([lab,count],i)=>{
+    const pct = Math.round(count/total*100);
+    const bw  = Math.round(count/max*100);
+    h += `<div class="chart-row">
+      <div class="chart-label" title="${lab}">${lab}</div>
+      <div class="chart-bw"><div class="chart-bar" style="width:${bw}%;background:${COLS[i%COLS.length]}">${pct>6?pct+'%':''}</div></div>
+      <div class="chart-val">${count} · ${pct}%</div>
+    </div>`;
+  });
+  if (sorted.length>15) h += `<div style="font-size:10px;color:var(--text3);margin-top:6px">+${sorted.length-15} more MAHs</div>`;
+
+  document.getElementById('mahDetail').innerHTML = h;
+}
+
+// ── PATENT ──
+function renderPatent() {
+  const GROUPS = [
+    { key:'PROTECTED', label:'🔒 On Patent',    sub:'In-licensing / co-development targets', c:'var(--accent4)' },
+    { key:'CLIFF',     label:'⚠️ Patent Cliff',  sub:'First-mover generic opportunity',        c:'var(--accent3)' },
+    { key:'EARLY',     label:'📉 Early Generic', sub:'Market forming — enter now',              c:'var(--accent)'  },
+    { key:'MATURE',    label:'🔓 Mature Market', sub:'Differentiation strategy required',       c:'var(--accent2)' },
+    { key:'UNKNOWN',   label:'❓ No Data',       sub:'Not found in ANVISA CMED dataset',        c:'var(--text3)'   }
+  ];
+
+  let h = `<div class="info amber" style="margin-bottom:14px">
+    <strong>Patent Cliff Proxy</strong> — Status inferred from generic/similar product count and MAH concentration in ANVISA CMED data.
+    This is a market signal, not a legal patent search. Validate with Espacenet/Inpi before BD decisions.
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">`;
+
+  GROUPS.forEach(def => {
+    const items = results.filter(r=>r.pat.status===def.key);
+    h += `<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <div style="background:var(--card2);padding:11px 13px;border-bottom:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:600;color:${def.c}">${def.label}</div>
+        <div style="font-size:10px;color:var(--text3)">${def.sub}</div>
+      </div>
+      <div style="padding:10px;display:flex;flex-direction:column;gap:5px">`;
+    if (!items.length) h += '<div style="color:var(--text3);font-size:10px">None in pipeline</div>';
+    items.forEach(r => {
+      h += `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">
+        <div>
+          <div class="mono hl-c" style="font-size:11px">${r.mol}</div>
+          <div style="font-size:9px;color:var(--text3)">${r.mahs||0} MAHs · ${r.rows.length} regs</div>
+        </div>
+        <span class="badge ${attrLabel(r.total).cl}">${r.total}</span>
+      </div>`;
+    });
+    h += '</div></div>';
+  });
+
+  h += '</div>';
+
+  // Descriptions
+  const shown = new Set();
+  h += `<div class="divider" style="margin:14px 0"></div>
+  <div class="sub-label">INDIVIDUAL SIGNALS</div>
+  <div style="display:flex;flex-direction:column;gap:6px">`;
+  results.forEach(r => {
+    h += `<div class="cliff-item">
+      <span style="font-size:18px">${r.pat.icon}</span>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span class="mono hl-c" style="font-size:11px">${r.mol}</span>
+          <span style="font-size:10px;color:${r.pat.color}">${r.pat.label}</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px;max-width:480px;line-height:1.4">${r.pat.desc}</div>
+      </div>
+    </div>`;
+  });
+  h += '</div>';
+
+  document.getElementById('patentContent').innerHTML = h;
+}
+
+// ── COMPETITION ──
+function renderComp() {
+  let h = `<div class="table-wrap" style="border-radius:12px"><table>
+    <tr>
+      <th onclick="doSort('mol')">MOLECULE ⇅</th>
+      <th title="Number of unique MAHs in ANVISA">COMP. (40pts)</th>
+      <th title="Patent lifecycle proxy">PATENT (25pts)</th>
+      <th title="Avg PMC pricing tier">PRICE (20pts)</th>
+      <th title="Fixed-dose combination bonus">FDC (15pts)</th>
+      <th onclick="doSort('total')">TOTAL ⇅</th>
+      <th>ATTRACTIVENESS</th>
+      <th>BD ACTION</th>
+    </tr>`;
+
+  results.forEach((r,i) => {
+    const a = attrLabel(r.total);
+    h += `<tr class="fade-in" style="animation-delay:${i*35}ms">
+      <td class="mono hl-c">${r.mol}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="sbar" style="width:55px"><div class="sbar-fill" style="width:${r.comp/40*100}%;background:var(--accent)"></div></div>
+          <span class="mono" style="font-size:10px;color:var(--text2)">${r.comp}/40</span>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="sbar" style="width:55px"><div class="sbar-fill" style="width:${r.patS/25*100}%;background:var(--purple)"></div></div>
+          <span class="mono" style="font-size:10px;color:var(--text2)">${r.patS}/25</span>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="sbar" style="width:55px"><div class="sbar-fill" style="width:${r.price/20*100}%;background:var(--accent3)"></div></div>
+          <span class="mono" style="font-size:10px;color:var(--text2)">${r.price}/20</span>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="sbar" style="width:55px"><div class="sbar-fill" style="width:${r.fdcS/15*100}%;background:var(--accent2)"></div></div>
+          <span class="mono" style="font-size:10px;color:var(--text2)">${r.fdcS}/15</span>
+        </div>
+      </td>
+      <td><div class="sc ${a.sc}">${r.total}</div></td>
+      <td><span class="badge ${a.cl}">${a.l}</span></td>
+      <td style="font-size:11px">${bdSignal(r)}</td>
+    </tr>`;
+  });
+  h += '</table></div>';
+  document.getElementById('compContent').innerHTML = h;
+}
+
+// ── PRICE ──
+function renderPrice() {
+  const priced = results.filter(r=>r.avgP>0);
+  if (!priced.length) {
+    document.getElementById('priceContent').innerHTML = `<div class="empty"><div class="ico">💰</div><p>No price data found in loaded dataset.<br>Make sure the ANVISA CMED file is loaded and PMC columns are present.</p></div>`;
+    return;
+  }
+
+  const sorted = [...priced].sort((a,b)=>b.maxP-a.maxP);
+  const maxMax = sorted[0]?.maxP||1;
+
+  let h = `<div class="info green" style="margin-bottom:14px">
+    <strong>ANVISA CMED Price Analysis</strong> — PF (preço de fábrica) and PMC (preço máximo ao consumidor).
+    Higher PMC = greater margin potential. Price corridor (min–max) indicates market segmentation.
+  </div>
+  <div class="sub-label">PMC RANGE BY MOLECULE (R$)</div>`;
+
+  sorted.forEach((r,i) => {
+    const bwMax = Math.round(r.maxP/maxMax*100);
+    const bwMin = Math.round(r.minP/maxMax*100);
+    h += `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span class="mono hl-c" style="font-size:11px">${r.mol}</span>
+        <span class="mono" style="font-size:10px;color:var(--text3)">R$ ${r.minP.toFixed(2)} – R$ ${r.maxP.toFixed(2)} · avg R$ ${r.avgP.toFixed(2)}</span>
+      </div>
+      <div style="position:relative;height:10px;background:var(--bg);border-radius:4px;border:1px solid var(--border);overflow:hidden">
+        <div style="position:absolute;left:${bwMin}%;width:${bwMax-bwMin}%;height:100%;background:var(--accent2);border-radius:3px;opacity:.85"></div>
+        <div style="position:absolute;left:${bwMax}%;transform:translateX(-50%);width:2px;height:100%;background:var(--accent);"></div>
+      </div>
+    </div>`;
+  });
+
+  h += `<div class="divider" style="margin:14px 0"></div>
+  <div class="table-wrap"><table>
+    <tr><th>MOLECULE</th><th>AVG PMC</th><th>MIN PMC</th><th>MAX PMC</th><th>REGISTRATIONS</th><th>PRICE TIER</th></tr>`;
+  sorted.forEach(r => {
+    const tier = r.avgP>800?'💎 Premium':r.avgP>200?'🟡 Mid-Range':'🟢 Economy';
+    h += `<tr>
+      <td class="mono hl-c">${r.mol}</td>
+      <td class="mono">R$ ${r.avgP.toFixed(2)}</td>
+      <td class="mono" style="color:var(--text3)">R$ ${r.minP.toFixed(2)}</td>
+      <td class="mono hl-g">R$ ${r.maxP.toFixed(2)}</td>
+      <td class="mono">${r.rows.length}</td>
+      <td style="font-size:11px">${tier}</td>
+    </tr>`;
+  });
+  h += '</table></div>';
+
+  document.getElementById('priceContent').innerHTML = h;
+}
+
+// ═══════════════════════════════════════════════
+//  AI RECOMMENDATIONS
+// ═══════════════════════════════════════════════
+function resetAI() {
+  document.getElementById('aiContent').innerHTML = `
+    <div class="empty" style="padding:32px">
+      <div class="ico">🤖</div>
+      <p>Click <strong style="color:var(--text2)">Generate AI Recommendations</strong> to get protocol-grounded portfolio strategy from Claude.<br><br>Requires an Anthropic API key in the sidebar.</p>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="runAI()" id="aiBtn" style="margin-top:14px">✨ Generate AI Recommendations</button>`;
+}
+
+async function runAI() {
+  const key = document.getElementById('apiKey').value.trim();
+  if (!key) {
+    document.getElementById('aiContent').innerHTML = `
+      <div class="info amber" style="margin-bottom:12px">Please enter your Anthropic API key in the sidebar.<br>Get one free at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
+      <button class="btn btn-primary btn-full" onclick="runAI()" style="margin-top:10px">✨ Try Again</button>`;
+    return;
+  }
+
+  document.getElementById('aiContent').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text2);font-size:13px">
+      <div class="spinner"></div>
+      Consulting Claude on US/EU therapeutic protocols and BD strategy<span class="cursor-blink"></span>
+    </div>`;
+  setPill('aiPill','AI ACTIVE','on');
+
+  const summary = results.map(r => ({
+    molecule: r.mol,
+    score: r.total,
+    attractiveness: attrLabel(r.total).l,
+    mahs: r.mahs,
+    registrations: r.rows.length,
+    avgPMC_BRL: r.avgP.toFixed(2),
+    maxPMC_BRL: r.maxP.toFixed(2),
+    isFDC: r.hasFDC,
+    patentSignal: r.pat.label,
+    patentStatus: r.pat.status,
+    bdSignal: bdSignal(r).replace(/^[^\s]+ /,'')
+  }));
+
+  const prompt = `You are a senior pharmaceutical business development strategist specialising in the Brazilian generic and specialty drug market. You have deep expertise in FDA and EMA clinical guidelines, ANVISA regulations, and global BD deal structures.
+
+Below is ANVISA CMED market data analysis for a BD pipeline evaluation:
+
+${JSON.stringify(summary, null, 2)}
+
+Using your knowledge of:
+1. Current FDA and EMA treatment guidelines (NCCN, ESC, AHA, NICE, EMA EPAR, FDA label data)
+2. Brazilian SUS formulary and RENAME relevance
+3. Patent landscapes and generic entry strategy
+4. Market entry barriers and BD deal structures in emerging markets
+
+Provide a comprehensive portfolio BD recommendation. Respond ONLY with valid minified JSON in exactly this structure (no markdown, no extra text):
+{"recommendations":[{"molecule":"<exact INN>","therapeuticClass":"<ATC class>","guidelineContext":"<FDA/EMA protocol context in 1 sentence>","bdRecommendation":"<specific BD action>","priority":"HIGH|MEDIUM|LOW","bdType":"In-License|Generic Entry|FDC Development|Biosimilar|Niche Specialty|Volume Generic","rationale":"<2-3 sentences combining market data and clinical context>"}],"portfolioSummary":"<3-4 sentence overall assessment>","strategicInsights":["<insight1>","<insight2>","<insight3>"],"topPick":"<single best molecule>","riskNote":"<one sentence on key portfolio risk>"}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{ role:'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({}));
+      throw new Error(err?.error?.message || resp.statusText);
+    }
+
+    const data = await resp.json();
+    const raw  = data.content[0].text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    const ai   = JSON.parse(raw);
+    renderAI(ai);
+    setPill('aiPill','AI READY','on');
+  } catch(e) {
+    document.getElementById('aiContent').innerHTML = `
+      <div class="info amber"><strong>API Error:</strong> ${e.message}</div>
+      <button class="btn btn-primary btn-full" onclick="runAI()" style="margin-top:12px">↺ Retry</button>`;
+    setPill('aiPill','AI ERROR','err');
+  }
+}
+
+function renderAI(ai) {
+  let h = '';
+
+  if (ai.portfolioSummary) {
+    h += `<div class="info" style="margin-bottom:14px">
+      <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:600;margin-bottom:6px">Portfolio Assessment</div>
+      <p style="line-height:1.65">${ai.portfolioSummary}</p>
+    </div>`;
+  }
+
+  if (ai.topPick) {
+    h += `<div style="display:flex;align-items:center;gap:10px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:11px 15px;margin-bottom:14px">
+      <span style="font-size:22px">⭐</span>
+      <div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Top Priority Molecule</div>
+        <div class="mono hl-g" style="font-size:13px">${ai.topPick}</div>
+      </div>
+    </div>`;
+  }
+
+  if (ai.riskNote) {
+    h += `<div class="info amber" style="margin-bottom:14px">⚠️ <strong>Risk Note:</strong> ${ai.riskNote}</div>`;
+  }
+
+  if (ai.strategicInsights?.length) {
+    h += `<div class="sub-label">STRATEGIC INSIGHTS</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-bottom:14px">`;
+    const icons = ['💡','🎯','📊','🔬','⚡','🌎'];
+    ai.strategicInsights.forEach((ins,i) => {
+      h += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:16px;margin-bottom:5px">${icons[i%icons.length]}</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.55">${ins}</div>
+      </div>`;
+    });
+    h += '</div>';
+  }
+
+  h += `<div class="sub-label">MOLECULE-LEVEL RECOMMENDATIONS</div>`;
+  (ai.recommendations||[]).forEach(rec => {
+    const pCl = (rec.priority||'').toLowerCase();
+    const bTyp = rec.bdType||'';
+    h += `<div class="ai-rec p-${pCl}">
+      <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <span class="mono hl-c" style="font-size:12px">${rec.molecule}</span>
+        <span class="badge bg-info" style="font-size:9px">${rec.therapeuticClass||''}</span>
+        <span class="badge ${pCl==='high'?'bg-high':pCl==='medium'?'bg-mod':'bg-low'}">${rec.priority||''}</span>
+        ${bTyp?`<span class="badge bg-purple" style="font-size:9px">${bTyp}</span>`:''}
+        <span style="font-size:10px;color:var(--text3);margin-left:auto">${rec.guidelineContext||''}</span>
+      </div>
+      <div style="font-size:12px;margin-bottom:5px"><strong style="color:var(--text2)">BD Action: </strong>${rec.bdRecommendation||''}</div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.55">${rec.rationale||''}</div>
+    </div>`;
+  });
+
+  document.getElementById('aiContent').innerHTML = h;
+}
+
+// ═══════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════
+const TABS = ['overview','fdc','mah','patent','comp','price','ai'];
+
+function switchTab(name) {
+  activeTab = name;
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',TABS[i]===name));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function doSort(key) {
+  sortDir *= -1;
+  results.sort((a,b) => {
+    const v = r => key==='mol'?r.mol:key==='mahs'?r.mahs:key==='avgP'?r.avgP:r.total;
+    const av=v(a), bv=v(b);
+    return typeof av==='string'?sortDir*av.localeCompare(bv):sortDir*(av-bv);
+  });
+  renderOverview();
+  if (activeTab==='comp') renderComp();
+}
+
+function exportCSV() {
+  const hdr = ['Molecule','Score','Attractiveness','MAHs','Forms','FDC','PatentStatus','AvgPMC','MaxPMC','Registrations','BDSignal'];
+  const rows = results.map(r => [
+    r.mol, r.total, attrLabel(r.total).l, r.mahs, r.forms,
+    r.hasFDC?'Yes':'No', r.pat.label,
+    r.avgP.toFixed(2), r.maxP.toFixed(2), r.rows.length,
+    bdSignal(r).replace(/^[^\s]+ /,'')
+  ]);
+  const csv = [hdr,...rows].map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'pharmavector_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+function setPill(id, label, cls) {
+  const el = document.getElementById(id);
+  el.querySelector('span').textContent = label;
+  el.className = 'h-pill ' + (cls||'');
+}
+
+// Drag-drop upload
+const uz = document.getElementById('uploadZone');
+uz.addEventListener('dragover', e=>{e.preventDefault();uz.classList.add('drag-over')});
+uz.addEventListener('dragleave', ()=>uz.classList.remove('drag-over'));
+uz.addEventListener('drop', e=>{
+  e.preventDefault();uz.classList.remove('drag-over');
+  const f=e.dataTransfer.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>processXLSX(ev.target.result);
+  r.readAsArrayBuffer(f);
+});
+
+// API key indicator
+document.getElementById('apiKey').addEventListener('input', e=>{
+  const v=e.target.value;
+  if(v.startsWith('sk-ant-')) setPill('aiPill','AI READY','on');
+  else if(v.length>0) setPill('aiPill','KEY?','warn');
+  else setPill('aiPill','AI OFFLINE','');
+});
 </script>
-
 </body>
 </html>
