@@ -1,57 +1,149 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>ANVISA Molecule Scanner</title>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<meta charset="UTF-8">
+<title>ANVISA Molecule Intelligence PRO</title>
+
+<style>
+body{font-family:Arial;padding:20px}
+textarea{width:420px;height:180px}
+table{border-collapse:collapse;margin-top:20px}
+td,th{border:1px solid #ccc;padding:6px}
+.good{background:#c8f7c5}
+.mid{background:#fff3b0}
+.bad{background:#f7c5c5}
+</style>
+
 </head>
 
 <body>
 
-<h2>ANVISA Competition Scanner</h2>
+<h2>ANVISA Molecule Intelligence PRO</h2>
 
-<textarea id="inns" rows="15" cols="50">
+Paste Brazil DCB INNs (one per line)
+
+<br><br>
+
+<textarea id="input">
 vonoprazana
 empagliflozina + metformina
 ácido obeticólico
-mirogabalina
 bilastina
+mirogabalina
 </textarea>
 
 <br><br>
 
-<button onclick="runScan()">Run Scan</button>
+<button onclick="run()">RUN SCAN</button>
 
-<table border="1" id="result"></table>
+<table id="out"></table>
 
 <script>
 
-async function queryINN(inn){
+const BASE="https://consultas.anvisa.gov.br/api/consulta/medicamentos"
 
-let url = `https://consultas.anvisa.gov.br/api/consulta/medicamentos?nomePrincipioAtivo=${encodeURIComponent(inn)}&page=0&size=1`
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 
-let r = await fetch(url)
-let j = await r.json()
+async function scanSingle(term){
 
-return j.totalElements
+let page=0
+let total=0
+let mah=new Set()
+let forms=new Set()
+let plants=new Set()
+let earliest=9999
+
+while(true){
+
+let url=`${BASE}?nomePrincipioAtivo=${encodeURIComponent(term)}&page=${page}&size=100`
+
+let r=await fetch(url)
+let j=await r.json()
+
+if(page===0) total=j.totalElements
+
+if(!j.content || j.content.length===0) break
+
+for(let item of j.content){
+
+if(item.empresa) mah.add(item.empresa.razaoSocial)
+
+if(item.formaFarmaceutica) forms.add(item.formaFarmaceutica)
+
+if(item.localFabricacao) plants.add(item.localFabricacao)
+
+if(item.dataVencimento){
+
+let y=parseInt(item.dataVencimento.substring(0,4))
+
+if(y<earliest) earliest=y
 
 }
 
-function score(n){
+}
 
-if(n<=3) return "VERY LOW"
-if(n<=10) return "LOW"
-if(n<=30) return "MEDIUM"
-return "HIGH"
+page++
+
+if(page*100>=total) break
+
+await sleep(250)
 
 }
 
-async function runScan(){
+return{
+total,
+mah:[...mah],
+forms:[...forms],
+plants:[...plants],
+earliest
+}
 
-let lines = document.getElementById("inns").value.split("\n")
+}
 
-let table = document.getElementById("result")
+function attractiveness(d){
 
-table.innerHTML = "<tr><th>INN</th><th>Registrations</th><th>Competition</th></tr>"
+let score=0
+
+if(d.total<=3) score+=40
+else if(d.total<=10) score+=30
+else if(d.total<=30) score+=15
+else score+=5
+
+let mahc=d.mah.length
+
+if(mahc<=2) score+=20
+else if(mahc<=5) score+=12
+else score+=5
+
+if(d.forms.length<=2) score+=15
+else score+=5
+
+if(d.plants.length<=3) score+=10
+else score+=4
+
+if(d.earliest>=2022) score+=15
+else if(d.earliest>=2018) score+=8
+else score+=3
+
+return score
+
+}
+
+function recommendation(score){
+
+if(score>=70) return "⭐ HIGH OPPORTUNITY"
+if(score>=45) return "⚠️ MODERATE"
+return "🔴 SATURATED"
+
+}
+
+async function run(){
+
+let lines=document.getElementById("input").value.split("\n")
+
+let table=document.getElementById("out")
+
+table.innerHTML="<tr><th>INN</th><th>Registrations</th><th>MAHs</th><th>Dosage Forms</th><th>Manufacture Sites</th><th>Earliest Expiry</th><th>Score</th><th>Recommendation</th></tr>"
 
 for(let l of lines){
 
@@ -59,23 +151,48 @@ l=l.trim()
 
 if(!l) continue
 
-let total = 0
+let result={total:0,mah:[],forms:[],plants:[],earliest:9999}
 
 if(l.includes("+")){
 
-let parts = l.split("+")
+let parts=l.split("+")
 
 for(let p of parts){
-total += await queryINN(p.trim())
+
+let d=await scanSingle(p.trim())
+
+result.total+=d.total
+d.mah.forEach(x=>result.mah.push(x))
+d.forms.forEach(x=>result.forms.push(x))
+d.plants.forEach(x=>result.plants.push(x))
+if(d.earliest<result.earliest) result.earliest=d.earliest
+
 }
 
 }else{
 
-total = await queryINN(l)
+result=await scanSingle(l)
 
 }
 
-table.innerHTML += `<tr><td>${l}</td><td>${total}</td><td>${score(total)}</td></tr>`
+let score=attractiveness(result)
+
+let rec=recommendation(score)
+
+let cls= score>=70 ? "good" : score>=45 ? "mid":"bad"
+
+table.innerHTML+=`
+<tr class="${cls}">
+<td>${l}</td>
+<td>${result.total}</td>
+<td>${result.mah.length}</td>
+<td>${result.forms.join(", ")}</td>
+<td>${result.plants.join(", ")}</td>
+<td>${result.earliest}</td>
+<td>${score}</td>
+<td>${rec}</td>
+</tr>
+`
 
 }
 
