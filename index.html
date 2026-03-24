@@ -2,14 +2,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ANVISA Molecule Intelligence PRO</title>
+<title>ANVISA Portfolio Intelligence</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
 body{
-font-family:Inter;
+font-family:Inter,Arial;
 background:#0f172a;
 color:white;
 padding:40px;
@@ -18,19 +18,18 @@ padding:40px;
 .card{
 background:#111827;
 padding:25px;
-border-radius:16px;
-box-shadow:0 10px 30px rgba(0,0,0,.5);
-max-width:900px;
+border-radius:18px;
+max-width:1000px;
 }
 
 textarea{
 width:100%;
-height:160px;
+height:150px;
 background:#020617;
 color:#22c55e;
 border:none;
-padding:15px;
-border-radius:10px;
+padding:12px;
+border-radius:12px;
 }
 
 button{
@@ -40,10 +39,9 @@ padding:12px 22px;
 border-radius:10px;
 font-weight:600;
 cursor:pointer;
-margin-top:15px;
+margin-top:12px;
+margin-right:8px;
 }
-
-button:hover{background:#16a34a}
 
 table{
 width:100%;
@@ -51,30 +49,9 @@ margin-top:25px;
 border-collapse:collapse;
 }
 
-th{
-text-align:left;
-background:#1f2937;
-padding:10px;
-}
-
-td{
+td,th{
 padding:10px;
 border-bottom:1px solid #1f2937;
-}
-
-.badge{
-padding:5px 10px;
-border-radius:999px;
-font-size:12px;
-}
-
-.high{background:#166534}
-.mid{background:#92400e}
-.low{background:#7f1d1d}
-
-.loader{
-margin-top:20px;
-display:none;
 }
 
 </style>
@@ -85,7 +62,7 @@ display:none;
 
 <div class="card">
 
-<h2>🇧🇷 ANVISA Molecule Intelligence PRO</h2>
+<h2>🇧🇷 ANVISA Portfolio Intelligence V3</h2>
 
 <textarea id="input">
 vonoprazana
@@ -95,11 +72,21 @@ bilastina
 mirogabalina
 </textarea>
 
-<button onclick="run()">Run Portfolio Scan</button>
+<br>
 
-<div class="loader" id="loader">Scanning ANVISA database…</div>
+<button onclick="run()">Run Scan</button>
+<button onclick="exportCSV()">Export CSV</button>
 
 <table id="out"></table>
+
+<h3>Dosage Form Saturation</h3>
+<canvas id="formChart"></canvas>
+
+<h3>MAH Concentration</h3>
+<canvas id="mahChart"></canvas>
+
+<h3>Top Entry Targets</h3>
+<div id="recommend"></div>
 
 </div>
 
@@ -107,8 +94,10 @@ mirogabalina
 
 const BASE="https://consultas.anvisa.gov.br/api/consulta/medicamentos"
 
-function proxy(url){
-return "https://api.allorigins.win/raw?url="+encodeURIComponent(url)
+let globalResults=[]
+
+function proxy(u){
+return "https://api.allorigins.win/raw?url="+encodeURIComponent(u)
 }
 
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
@@ -117,17 +106,15 @@ async function scan(term){
 
 let page=0
 let total=0
-let mah=new Set()
+let mah={}
 let forms=new Set()
 let plants=new Set()
-let earliest=9999
 
 while(true){
 
 let url=`${BASE}?nomePrincipioAtivo=${encodeURIComponent(term)}&page=${page}&size=100`
 
 let r=await fetch(proxy(url))
-
 let j=await r.json()
 
 if(page===0) total=j.totalElements
@@ -136,19 +123,17 @@ if(!j.content || j.content.length===0) break
 
 for(let item of j.content){
 
-if(item.empresa) mah.add(item.empresa.razaoSocial)
+if(item.empresa){
+
+let n=item.empresa.razaoSocial
+
+mah[n]=(mah[n]||0)+1
+
+}
 
 if(item.formaFarmaceutica) forms.add(item.formaFarmaceutica)
 
 if(item.localFabricacao) plants.add(item.localFabricacao)
-
-if(item.dataVencimento){
-
-let y=parseInt(item.dataVencimento.substring(0,4))
-
-if(y<earliest) earliest=y
-
-}
 
 }
 
@@ -156,59 +141,44 @@ page++
 
 if(page*100>=total) break
 
-await sleep(300)
+await sleep(250)
 
 }
 
 return{
 total,
-mah:[...mah],
+mah,
 forms:[...forms],
-plants:[...plants],
-earliest
+plants:[...plants]
 }
 
 }
 
-function score(d){
+function score(r){
 
 let s=0
 
-if(d.total<=3) s+=40
-else if(d.total<=10) s+=25
-else if(d.total<=30) s+=12
-else s+=4
+if(r.total<=3) s+=40
+else if(r.total<=10) s+=25
+else if(r.total<=30) s+=10
 
-if(d.mah.length<=2) s+=20
-else if(d.mah.length<=5) s+=10
-
-if(d.forms.length<=2) s+=10
-
-if(d.plants.length<=3) s+=10
-
-if(d.earliest>=2022) s+=10
+if(Object.keys(r.mah).length<=2) s+=20
+if(r.forms.length<=2) s+=10
+if(r.plants.length<=3) s+=10
 
 return s
 
 }
 
-function badge(s){
-
-if(s>=60) return `<span class="badge high">HIGH OPPORTUNITY</span>`
-if(s>=35) return `<span class="badge mid">MODERATE</span>`
-return `<span class="badge low">SATURATED</span>`
-
-}
-
 async function run(){
 
-document.getElementById("loader").style.display="block"
+globalResults=[]
 
 let lines=document.getElementById("input").value.split("\n")
 
 let table=document.getElementById("out")
 
-table.innerHTML="<tr><th>INN</th><th>Regs</th><th>MAHs</th><th>Forms</th><th>Plants</th><th>Score</th><th>Opportunity</th></tr>"
+table.innerHTML="<tr><th>Molecule</th><th>Regs</th><th>MAHs</th><th>Forms</th><th>Plants</th><th>Score</th></tr>"
 
 for(let l of lines){
 
@@ -216,47 +186,90 @@ l=l.trim()
 
 if(!l) continue
 
-let result={total:0,mah:[],forms:[],plants:[],earliest:9999}
+let r=await scan(l)
 
-if(l.includes("+")){
+r.name=l
+r.score=score(r)
 
-let parts=l.split("+")
-
-for(let p of parts){
-
-let d=await scan(p.trim())
-
-result.total+=d.total
-result.mah=result.mah.concat(d.mah)
-result.forms=result.forms.concat(d.forms)
-result.plants=result.plants.concat(d.plants)
-if(d.earliest<result.earliest) result.earliest=d.earliest
+globalResults.push(r)
 
 }
 
-}else{
+globalResults.sort((a,b)=>b.score-a.score)
 
-result=await scan(l)
-
-}
-
-let sc=score(result)
+for(let r of globalResults){
 
 table.innerHTML+=`
 <tr>
-<td>${l}</td>
-<td>${result.total}</td>
-<td>${result.mah.length}</td>
-<td>${result.forms.length}</td>
-<td>${result.plants.length}</td>
-<td>${sc}</td>
-<td>${badge(sc)}</td>
+<td>${r.name}</td>
+<td>${r.total}</td>
+<td>${Object.keys(r.mah).length}</td>
+<td>${r.forms.length}</td>
+<td>${r.plants.length}</td>
+<td>${r.score}</td>
 </tr>
 `
 
 }
 
-document.getElementById("loader").style.display="none"
+buildCharts()
+buildRecommendations()
+
+}
+
+function buildCharts(){
+
+let labels=globalResults.map(x=>x.name)
+let formData=globalResults.map(x=>x.forms.length)
+let mahData=globalResults.map(x=>Object.keys(x.mah).length)
+
+new Chart(formChart,{
+type:"bar",
+data:{labels,datasets:[{label:"Dosage Forms",data:formData}]}
+})
+
+new Chart(mahChart,{
+type:"pie",
+data:{labels,datasets:[{data:mahData}]}
+})
+
+}
+
+function buildRecommendations(){
+
+let div=document.getElementById("recommend")
+
+div.innerHTML=""
+
+let top=globalResults.slice(0,3)
+
+for(let t of top){
+
+div.innerHTML+=`⭐ ${t.name} (score ${t.score})<br>`
+
+}
+
+}
+
+function exportCSV(){
+
+let rows=["Molecule,Registrations,MAHs,Forms,Plants,Score"]
+
+for(let r of globalResults){
+
+rows.push(`${r.name},${r.total},${Object.keys(r.mah).length},${r.forms.length},${r.plants.length},${r.score}`)
+
+}
+
+let blob=new Blob([rows.join("\n")])
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="anvisa_portfolio.csv"
+
+a.click()
 
 }
 
