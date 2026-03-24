@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ANVISA Molecule Scanner</title>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+
+<body>
+
+<h2>ANVISA Competition Scanner</h2>
+
+<textarea id="inns" rows="15" cols="50">
+vonoprazana
+empagliflozina + metformina
+ácido obeticólico
+mirogabalina
+bilastina
+</textarea>
+
+<br><br>
+
+<button onclick="runScan()">Run Scan</button>
+
+<table border="1" id="result"></table>
+
+<script>
+
+async function queryINN(inn){
+
+let url = `https://consultas.anvisa.gov.br/api/consulta/medicamentos?nomePrincipioAtivo=${encodeURIComponent(inn)}&page=0&size=1`
+
+let r = await fetch(url)
+let j = await r.json()
+
+return j.totalElements
+
+}
+
+function score(n){
+
+if(n<=3) return "VERY LOW"
+if(n<=10) return "LOW"
+if(n<=30) return "MEDIUM"
+return "HIGH"
+
+}
+
+async function runScan(){
+
+let lines = document.getElementById("inns").value.split("\n")
+
+let table = document.getElementById("result")
+
+table.innerHTML = "<tr><th>INN</th><th>Registrations</th><th>Competition</th></tr>"
+
+for(let l of lines){
+
+l=l.trim()
+
+if(!l) continue
+
+let total = 0
+
+if(l.includes("+")){
+
+let parts = l.split("+")
+
+for(let p of parts){
+total += await queryINN(p.trim())
+}
+
+}else{
+
+total = await queryINN(l)
+
+}
+
+table.innerHTML += `<tr><td>${l}</td><td>${total}</td><td>${score(total)}</td></tr>`
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
